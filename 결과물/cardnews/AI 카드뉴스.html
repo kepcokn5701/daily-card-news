@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>한전 AI 카드뉴스</title>
+<template id="__bundler_thumbnail" data-bg-color="#004097">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#004097"/>
+    <g transform="translate(600 360)">
+      <circle r="120" fill="#FFB71B"/>
+      <path d="M -40 -60 L 20 -10 L -10 -10 L 30 60 L -30 10 L 0 10 Z" fill="#004097"/>
+    </g>
+    <text x="600" y="580" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="56" font-weight="900" letter-spacing="-2">한전 AI 카드뉴스</text>
+    <text x="600" y="630" text-anchor="middle" fill="#FFB71B" font-family="sans-serif" font-size="26" font-weight="600">불러오는 중…</text>
+  </svg>
+</template>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --kepco-blue: #004097;
+    --kepco-blue-deep: #002d6b;
+    --kepco-sky: #00A3E0;
+    --kepco-yellow: #FFB71B;
+    --ink: #0d1826;
+    --ink-2: #3a4a60;
+    --paper: #F6F8FB;
+    --line: #E5EAF2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #EEF1F6; font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  body { padding: 32px 0 80px; }
+  .page-head { max-width: 1140px; margin: 0 auto 28px; padding: 0 24px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap;}
+  .page-head h1 { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+  .page-head p { margin: 4px 0 0; color: #6b7a90; font-size: 14px;}
+  .style-picker { display: inline-flex; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 2px; }
+  .style-picker button { border: none; background: transparent; padding: 8px 14px; font-family: inherit; font-weight: 600; font-size: 13px; color: #6b7a90; border-radius: 999px; cursor: pointer;}
+  .style-picker button.active { background: var(--ink); color: #fff; }
+  .grid { max-width: 1140px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .card-wrap { display: flex; flex-direction: column; align-items: center; }
+  .card-num { font-size: 12px; font-weight: 700; color: #8a99b1; margin-bottom: 10px; letter-spacing: 0.08em; }
+  .card { width: 540px; max-width: 100%; aspect-ratio: 1080 / 1350; border-radius: 24px; overflow: hidden; position: relative; box-shadow: 0 20px 60px rgba(10, 30, 70, 0.12), 0 2px 8px rgba(10, 30, 70, 0.06); }
+  .card-inner { position: absolute; inset: 0; transform-origin: top left; }
+
+  /* ===== Viewer mode (one card at a time) ===== */
+  .view-mode-toggle { display: inline-flex; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 2px; margin-left: 10px; }
+  .view-mode-toggle button { border: none; background: transparent; padding: 8px 14px; font-family: inherit; font-weight: 600; font-size: 13px; color: #6b7a90; border-radius: 999px; cursor: pointer;}
+  .view-mode-toggle button.active { background: var(--ink); color: #fff; }
+
+  .viewer { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; z-index: 10; }
+  .viewer-card-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; max-height: 100%; }
+  .viewer .card { height: min(calc(100vh - 40px), calc((100vw - 200px) * 1.25)); width: calc(min(calc(100vh - 40px), calc((100vw - 200px) * 1.25)) * 0.8); max-width: calc(100vw - 160px); }
+  .viewer-meta { display: none; }
+
+  .fs-btn { background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); border: none; padding: 10px 14px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: 13px; color: #0d1826; box-shadow: 0 2px 12px rgba(10,30,70,0.08); display: inline-flex; align-items: center; gap: 6px;}
+
+  .nav-btn { position: fixed; top: 50%; transform: translateY(-50%); width: 56px; height: 56px; border-radius: 50%; border: none; background: #fff; box-shadow: 0 4px 20px rgba(10,30,70,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #0d1826; z-index: 20; transition: all 0.2s;}
+  .nav-btn:hover:not(:disabled) { transform: translateY(-50%) scale(1.08); box-shadow: 0 6px 28px rgba(10,30,70,0.22);}
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav-btn.prev { left: 24px; }
+  .nav-btn.next { right: 24px; }
+
+  .dots { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 20; padding: 10px 14px; background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); border-radius: 999px; box-shadow: 0 4px 20px rgba(10,30,70,0.1); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #CBD3E0; border: none; cursor: pointer; padding: 0; transition: all 0.2s; }
+  .dot.active { background: var(--ink); width: 28px; border-radius: 5px; }
+  .dot:hover { background: #8a99b1; }
+
+  .counter { position: fixed; top: 24px; right: 24px; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 14px; color: #0d1826; z-index: 20; box-shadow: 0 2px 12px rgba(10,30,70,0.08);}
+
+  .viewer-head { position: fixed; top: 24px; left: 24px; display: flex; gap: 10px; align-items: center; z-index: 20; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* =====================================================================
+   TWEAKS — persisted defaults
+   ===================================================================== */
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "style": "official",
+  "showBadges": true
+}/*EDITMODE-END*/;
+
+/* =====================================================================
+   STYLE TOKENS — 3 variants
+   ===================================================================== */
+const STYLES = {
+  official: {
+    name: '한전 공식',
+    bg: '#F2F5FA',
+    surface: '#FFFFFF',
+    ink: '#0d1826',
+    ink2: '#3a4a60',
+    accent: '#004097',
+    accentDeep: '#002d6b',
+    sky: '#00A3E0',
+    yellow: '#FFB71B',
+    coverBg: 'linear-gradient(160deg, #004097 0%, #002d6b 100%)',
+    coverInk: '#fff',
+    radius: 20,
+    displayFont: "'Pretendard Variable', sans-serif",
+    bodyFont: "'Pretendard Variable', sans-serif",
+    bubble: '#EEF3FB',
+    ai: '#004097',
+    korName: '한전 공식',
+  },
+  friendly: {
+    name: '친근 일러스트',
+    bg: '#FFF9EE',
+    surface: '#FFFFFF',
+    ink: '#2A2330',
+    ink2: '#5d5269',
+    accent: '#FF7A59',
+    accentDeep: '#E04E2A',
+    sky: '#4AB8E6',
+    yellow: '#FFC939',
+    coverBg: 'linear-gradient(170deg, #FFB866 0%, #FF7A59 55%, #E04E2A 100%)',
+    coverInk: '#fff',
+    radius: 28,
+    displayFont: "'Pretendard Variable', sans-serif",
+    bodyFont: "'Pretendard Variable', sans-serif",
+    bubble: '#FFF1E4',
+    ai: '#E04E2A',
+    korName: '친근 일러스트',
+  },
+  mz: {
+    name: 'MZ 미래감',
+    bg: '#0A0B18',
+    surface: '#14162A',
+    ink: '#F2F4FF',
+    ink2: '#A6AEC8',
+    accent: '#7B5CFF',
+    accentDeep: '#5436D1',
+    sky: '#3DE1FF',
+    yellow: '#E6FF4F',
+    coverBg: 'radial-gradient(110% 85% at 20% 10%, #7B5CFF 0%, #2D1A7A 45%, #05061A 100%)',
+    coverInk: '#fff',
+    radius: 22,
+    displayFont: "'Pretendard Variable', sans-serif",
+    bodyFont: "'Pretendard Variable', sans-serif",
+    bubble: '#1D2040',
+    ai: '#3DE1FF',
+    korName: 'MZ 미래감',
+  },
+};
+
+/* =====================================================================
+   CARD — 1080x1350 canvas, auto-scaled into 540w wrapper
+   ===================================================================== */
+function Card({ children, bg, tone = 'light' }) {
+  const ref = useRef(null);
+  const innerRef = useRef(null);
+  useEffect(() => {
+    function fit() {
+      if (!ref.current || !innerRef.current) return;
+      const w = ref.current.clientWidth;
+      const s = w / 1080;
+      innerRef.current.style.width = '1080px';
+      innerRef.current.style.height = '1350px';
+      innerRef.current.style.transform = `scale(${s})`;
+    }
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="card" style={{ background: bg }}>
+      <div ref={innerRef} className="card-inner" style={{ color: tone === 'dark' ? '#fff' : 'inherit' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function CardShell({ children, s, tone = 'light', bg }) {
+  return <Card bg={bg || s.bg} tone={tone}>{children}</Card>;
+}
+
+/* Small building blocks used inside 1080-px cards */
+function Chip({ children, color, bg, s }) {
+  return <span style={{
+    display: 'inline-flex', alignItems: 'center', gap: 10,
+    padding: '10px 22px', borderRadius: 999,
+    background: bg || 'rgba(255,255,255,0.14)',
+    color: color || s.coverInk,
+    fontWeight: 700, fontSize: 26, letterSpacing: '-0.01em',
+  }}>{children}</span>;
+}
+
+function Dot({ color = '#fff', size = 10 }) {
+  return <span style={{ width: size, height: size, borderRadius: '50%', background: color, display: 'inline-block' }}/>;
+}
+
+/* =====================================================================
+   CARD 1 — Cover
+   ===================================================================== */
+function Card1Cover({ s }) {
+  return (
+    <CardShell s={s} tone="dark" bg={s.coverBg}>
+      <div style={{ padding: 80, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: s.coverInk, fontFamily: s.bodyFont }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 54, height: 54, borderRadius: 14, background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 24, letterSpacing: '-0.02em' }}>K</div>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 700, opacity: 0.9 }}>한국전력공사</div>
+            <div style={{ fontSize: 18, opacity: 0.6 }}>AI 활용 가이드 · 2026</div>
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: 30, fontWeight: 600, opacity: 0.8, marginBottom: 24, letterSpacing: '0.02em' }}>
+            사무실부터 현장까지, 모든 한전인을 위한
+          </div>
+          <div style={{ fontSize: 120, fontWeight: 900, lineHeight: 1.0, letterSpacing: '-0.04em', fontFamily: s.displayFont }}>
+            AI,<br/>
+            <span style={{ color: s.yellow }}>진짜</span> 쉽습니다.
+          </div>
+          <div style={{ fontSize: 34, fontWeight: 500, opacity: 0.82, marginTop: 36, lineHeight: 1.45 }}>
+            카톡 보낼 줄 알면 AI도 씁니다.<br/>
+            10장이면 충분해요.
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Chip s={s}>보고서 작성</Chip>
+            <Chip s={s}>학습에 활용</Chip>
+            <Chip s={s}>바이브 코딩</Chip>
+          </div>
+          <div style={{ fontSize: 22, opacity: 0.6, textAlign: 'right' }}>
+            👉 넘겨보기<br/>
+            <span style={{ fontSize: 18 }}>01 / 11</span>
+          </div>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+/* =====================================================================
+   CARD 2 — 오해 1: 보안
+   ===================================================================== */
+function Card2Security({ s }) {
+  return (
+    <CardShell s={s}>
+      <div style={{ padding: 80, height: '100%', display: 'flex', flexDirection: 'column', fontFamily: s.bodyFont, color: s.ink }}>
+        <MythHeader n="01" title="보안 때문에 못 써요?" s={s}/>
+
+        <div style={{ fontSize: 72, fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.04em', marginTop: 40, fontFamily: s.displayFont }}>
+          쓸 수 있습니다.<br/>
+          <span style={{ color: s.accent }}>이 두 가지</span>를 참고해주세요.
+        </div>
+
+        <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <SecurityRow s={s} n="1" title="민감 정보는 마스킹해서 입력" desc={'실제 이름·고객번호·위치 → "A씨, 1234지점"으로 바꿔서 질문'} />
+          <SecurityRow s={s} n="2" title="AI모델 학습 허용관련 설정 OFF 하기" desc={<>
+            우측 상단 <b>프로필 아이콘 → Settings</b> 클릭<br/>
+            <span style={{fontSize: 22}}>· ChatGPT: <b>Data controls → "Improve for everyone" OFF + "Memory" OFF</b></span><br/>
+            <span style={{fontSize: 22}}>· Claude: <b>Privacy → "Help improve Claude" OFF</b></span><br/>
+            <span style={{fontSize: 22}}>· Gemini: <b>활동 → "Gemini 앱 활동" OFF</b></span>
+          </>} tag="국정원 권고" />
+        </div>
+
+        <div style={{ marginTop: 'auto', padding: '26px 32px', background: s.accent + '12', borderRadius: 20, display: 'flex', gap: 20, alignItems: 'center' }}>
+          <div style={{ fontSize: 40 }}>💡</div>
+          <div style={{ fontSize: 24, color: s.ink2, lineHeight: 1.5, fontWeight: 500 }}>
+            한전 업무에 AI를 사용한다고 <b style={{color: s.ink}}>무조건 보안 위반이 아닙니다.</b><br/>
+            "누구인지 특정 안 되게" 만들고 입력하면 OK.
+          </div>
+        </div>
+
+        <div style={{ marginTop: 14, padding: '18px 24px', background: '#FFF4E6', borderRadius: 16, border: '2px solid #FFB71B', display: 'flex', gap: 14, alignItems: 'center' }}>
+          <div style={{ fontSize: 32 }}>⚠️</div>
+          <div style={{ fontSize: 20, color: '#7A4A00', lineHeight: 1.5, fontWeight: 600 }}>
+            그래도 <b style={{color: '#B8540A'}}>개인정보·민감정보·대외비 자료</b>는 절대 그대로 입력 금지.<br/>
+            <span style={{fontSize: 18, fontWeight: 500}}>의심되면 "이거 넣어도 되나?" 먼저 고민 → 마스킹 후 입력.</span>
+          </div>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+function MythHeader({ n, title, s }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+      <div style={{ padding: '6px 18px', background: s.accent, color: '#fff', borderRadius: 999, fontWeight: 800, fontSize: 22, letterSpacing: '0.05em' }}>MYTH · {n}</div>
+      <div style={{ fontSize: 30, color: s.ink2, fontWeight: 600 }}>"{title}"</div>
+    </div>
+  );
+}
+
+function SecurityRow({ s, n, title, desc, tag }) {
+  return (
+    <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+      <div style={{ flexShrink: 0, width: 60, height: 60, borderRadius: 16, background: s.accent, color: '#fff', fontWeight: 900, fontSize: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: s.displayFont }}>{n}</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em' }}>{title}</div>
+          {tag && <div style={{ padding: '3px 12px', background: s.yellow, color: s.ink, borderRadius: 8, fontWeight: 800, fontSize: 17 }}>{tag}</div>}
+        </div>
+        <div style={{ fontSize: 24, color: s.ink2, marginTop: 8, lineHeight: 1.55, fontWeight: 500 }}>{desc}</div>
+      </div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   CARD 3 — 오해 2: 사무직만 쓰는 거 아닌가요?
+   ===================================================================== */
+function Card3Scope({ s }) {
+  return (
+    <CardShell s={s}>
+      <div style={{ padding: 72, height: '100%', display: 'flex', flexDirection: 'column', fontFamily: s.bodyFont, color: s.ink }}>
+        <MythHeader n="02" title="책상 앞 사람들만 쓰는 거죠?" s={s}/>
+
+        <div style={{ fontSize: 66, fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.04em', marginTop: 32, fontFamily: s.displayFont }}>
+          <span style={{ color: s.accent }}>문서·숫자·용어</span>가<br/>
+          있는 모든 일에.
+        </div>
+
+        <div style={{ marginTop: 28, fontSize: 24, color: s.ink2, lineHeight: 1.55, fontWeight: 500 }}>
+          현장도, 사무실도 — 한전의 업무는 결국 <b style={{color: s.ink}}>보고서·매뉴얼·응대·숫자로 이루어집니다.</b>
+        </div>
+
+        <div style={{ marginTop: 28, flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <ScopeCase s={s} icon="⚡" role="송변전·배전" ex={<><b>고장 원인 분석</b><br/>로그·데이터 패턴 정리</>}/>
+          <ScopeCase s={s} icon="🏗️" role="건설" ex={<><b>공사 일정·자재 정리</b><br/>공정표 초안 요약</>}/>
+          <ScopeCase s={s} icon="💻" role="ICT" ex={<><b>로그·에러 원인 분석</b><br/>코드 작성·리뷰</>}/>
+          <ScopeCase s={s} icon="📋" role="사무" ex={<><b>엑셀 집계·VLOOKUP</b><br/>수식 한 줄로 끝</>}/>
+          <ScopeCase s={s} icon="📝" role="보고서" ex={<><b>기안서·품의서</b><br/>초안 20분 컷</>}/>
+          <ScopeCase s={s} icon="📧" role="커뮤니케이션" ex={<><b>메일·공문 다듬기</b><br/>톤·문장 교정</>}/>
+        </div>
+
+        <div style={{ marginTop: 22, padding: '20px 24px', background: s.surface, borderRadius: 16, border: `2px solid ${s.accent}22`, display: 'flex', gap: 14, alignItems: 'center' }}>
+          <div style={{ fontSize: 34 }}>💡</div>
+          <div style={{ fontSize: 22, fontWeight: 600, color: s.ink2, lineHeight: 1.5 }}>
+            망치가 목수를 대체하지 않듯, <b style={{color: s.accent}}>AI는 당신을 대체하지 않습니다.</b><br/>
+            <span style={{fontSize: 20}}>반복·귀찮은 일을 맡기고, 사람은 판단·현장에 집중.</span>
+          </div>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+function ScopeCase({ s, icon, role, ex }) {
+  return (
+    <div style={{ padding: 18, background: s.surface, borderRadius: 14, border: `2px solid ${s.line || '#E5EAF2'}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 26 }}>{icon}</div>
+        <div style={{ padding: '2px 10px', background: s.accent, color: '#fff', borderRadius: 7, fontWeight: 800, fontSize: 16, letterSpacing: '0.04em' }}>{role}</div>
+      </div>
+      <div style={{ fontSize: 19, color: s.ink, fontWeight: 500, lineHeight: 1.4 }}>{ex}</div>
+    </div>
+  );
+}
+
+function StatBox({ s, big, small, highlight }) {
+  return (
+    <div style={{
+      padding: 32, borderRadius: 20,
+      background: highlight ? s.accent : s.surface,
+      color: highlight ? '#fff' : s.ink,
+      border: highlight ? 'none' : `2px solid ${s.line || '#E5EAF2'}`,
+    }}>
+      <div style={{ fontSize: 26, opacity: 0.8, fontWeight: 600, marginBottom: 8 }}>{small}</div>
+      <div style={{ fontSize: 78, fontWeight: 900, letterSpacing: '-0.04em', fontFamily: s.displayFont, lineHeight: 1 }}>{big}</div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   CARD 4 — 오해 3: IT 전문가
+   ===================================================================== */
+function Card4Expert({ s }) {
+  return (
+    <CardShell s={s}>
+      <div style={{ padding: 80, height: '100%', display: 'flex', flexDirection: 'column', fontFamily: s.bodyFont, color: s.ink }}>
+        <MythHeader n="03" title="IT 전문가만 쓰는 거죠?" s={s}/>
+
+        <div style={{ fontSize: 72, fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.04em', marginTop: 40, fontFamily: s.displayFont }}>
+          <span style={{ color: s.accent }}>한국어로 말만 걸면</span><br/>
+          끝입니다.
+        </div>
+
+        {/* Fake chat */}
+        <div style={{ marginTop: 56, background: s.surface, borderRadius: 24, padding: 32, border: `1px solid ${s.line || '#E5EAF2'}`, flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <ChatBubble s={s} me text="엑셀에서 주소록에서 '동'만 뽑아내는 수식 알려줘"/>
+          <ChatBubble s={s} text={<span>=MID(A2, FIND("구 ", A2)+2, FIND("동", A2)-FIND("구 ", A2)-1)<br/><span style={{ opacity: 0.7 }}>👉 A2 셀에 주소가 있다고 가정했어요.</span></span>}/>
+          <ChatBubble s={s} me text="오 되네! 근데 '로'로 끝나면 어떡해?"/>
+          <ChatBubble s={s} text="그 경우엔 IFERROR로 감싸서 처리할 수 있어요..."/>
+        </div>
+
+        <div style={{ marginTop: 32, fontSize: 30, color: s.ink2, lineHeight: 1.55, textAlign: 'center', fontWeight: 600 }}>
+          코딩·전문 용어 <b style={{color: s.ink}}>하나도 필요 없습니다.</b>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+function ChatBubble({ s, me = false, text }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: me ? 'flex-end' : 'flex-start' }}>
+      <div style={{
+        maxWidth: '78%',
+        background: me ? s.accent : s.bubble,
+        color: me ? '#fff' : s.ink,
+        padding: '22px 28px',
+        borderRadius: 24,
+        borderBottomRightRadius: me ? 6 : 24,
+        borderBottomLeftRadius: me ? 24 : 6,
+        fontSize: 26, lineHeight: 1.5, fontWeight: 500,
+        fontFamily: me ? s.bodyFont : 'ui-monospace, "SF Mono", Menlo, monospace',
+      }}>{text}</div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   CARD 5 — 사례 1: 엑셀 Before/After 슬라이더 (INTERACTIVE)
+   ===================================================================== */
+function Card5Excel({ s }) {
+  const [pos, setPos] = useState(50);
+  return (
+    <CardShell s={s}>
+      <div style={{ padding: 80, height: '100%', display: 'flex', flexDirection: 'column', fontFamily: s.bodyFont, color: s.ink }}>
+        <CaseHeader n="01" title="엑셀 수식이 막막할 때" s={s}/>
+
+        <div style={{ fontSize: 60, fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.03em', marginTop: 20, fontFamily: s.displayFont }}>
+          슬라이더를 움직여보세요 👈👉
+        </div>
+
+        {/* Before/After slider */}
+        <BeforeAfter s={s} pos={pos} setPos={setPos}/>
+
+        <div style={{ marginTop: 32, padding: 24, background: s.surface, borderRadius: 18, border: `2px solid ${s.line || '#E5EAF2'}`, display: 'flex', gap: 20, alignItems: 'center' }}>
+          <div style={{ fontSize: 40 }}>⏱</div>
+          <div style={{ fontSize: 26, color: s.ink2, lineHeight: 1.5, fontWeight: 500 }}>
+            평소 40분 → <b style={{color: s.accent, fontSize: 32}}>3분</b><br/>
+            <span style={{ fontSize: 22 }}>실제 사무직 직원 평균 기준</span>
+          </div>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+function CaseHeader({ n, title, s }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ padding: '6px 18px', background: s.yellow, color: s.ink, borderRadius: 999, fontWeight: 800, fontSize: 22, letterSpacing: '0.05em' }}>CASE · {n}</div>
+      <div style={{ fontSize: 32, color: s.ink2, fontWeight: 600 }}>{title}</div>
+    </div>
+  );
+}
+
+function BeforeAfter({ s, pos, setPos }) {
+  const boxH = 420;
+  return (
+    <div style={{ marginTop: 32, position: 'relative', height: boxH, borderRadius: 22, overflow: 'hidden', border: `2px solid ${s.line || '#E5EAF2'}`, background: s.surface, userSelect: 'none', cursor: 'ew-resize' }}
+      onMouseDown={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const move = (ev) => setPos(Math.max(3, Math.min(97, ((ev.clientX - rect.left) / rect.width) * 100)));
+        const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+        window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+        move(e);
+      }}
+      onTouchMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const t = e.touches[0];
+        setPos(Math.max(3, Math.min(97, ((t.clientX - rect.left) / rect.width) * 100)));
+      }}
+    >
+      {/* AFTER (below) */}
+      <div style={{ position: 'absolute', inset: 0, padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: s.accent, marginBottom: 10 }}>AI에게 물어봄 ✨</div>
+        <div style={{ fontSize: 26, fontWeight: 600, color: s.ink2, marginBottom: 14 }}>"이 칼럼에서 '동'만 뽑고 싶어"</div>
+        <div style={{ background: s.ink, color: '#9eeaff', padding: 24, borderRadius: 14, fontFamily: 'ui-monospace, monospace', fontSize: 22, lineHeight: 1.6 }}>
+          =MID(A2, FIND("구 ", A2)+2,<br/>
+          &nbsp;&nbsp;&nbsp;FIND("동", A2)-FIND("구 ", A2)-1)
+        </div>
+        <div style={{ fontSize: 22, color: s.ink2, marginTop: 14 }}>👇 그대로 복사 → 끝</div>
+      </div>
+
+      {/* BEFORE (masked) */}
+      <div style={{ position: 'absolute', inset: 0, clipPath: `inset(0 ${100 - pos}% 0 0)`, background: '#FFF4F4', padding: 32, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#C83333', marginBottom: 10 }}>혼자 구글링 중 😭</div>
+        <div style={{ fontSize: 26, fontWeight: 600, color: s.ink2, marginBottom: 14 }}>"엑셀 주소에서 동 추출하는 방법..."</div>
+        <div style={{ background: '#fff', border: `1px solid ${s.line || '#E5EAF2'}`, padding: 20, borderRadius: 12, fontSize: 22, color: s.ink2, lineHeight: 1.5 }}>
+          📄 블로그 7개 읽기<br/>
+          🎬 유튜브 2개 돌려보기<br/>
+          💬 김 대리님께 물어보기<br/>
+          <span style={{ color: '#C83333', fontWeight: 700 }}>→ 40분째 진행 중...</span>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pos}%`, width: 4, background: s.accent, transform: 'translateX(-50%)', pointerEvents: 'none' }}/>
+      <div style={{ position: 'absolute', top: '50%', left: `${pos}%`, transform: 'translate(-50%, -50%)', width: 68, height: 68, borderRadius: '50%', background: '#fff', border: `4px solid ${s.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.15)', pointerEvents: 'none', fontSize: 22, fontWeight: 900, color: s.accent }}>
+        ⇆
+      </div>
+
+      {/* Labels */}
+      <div style={{ position: 'absolute', top: 16, left: 20, padding: '6px 14px', background: '#fff', borderRadius: 999, fontSize: 18, fontWeight: 800, color: '#C83333', boxShadow: '0 2px 6px rgba(0,0,0,0.08)' }}>BEFORE</div>
+      <div style={{ position: 'absolute', top: 16, right: 20, padding: '6px 14px', background: s.accent, borderRadius: 999, fontSize: 18, fontWeight: 800, color: '#fff' }}>AFTER</div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   CARD 6 — 사례 2: 전력 전문 질문 (타이핑 애니메이션)
+   ===================================================================== */
+function Card6Power({ s }) {
+  const fullAnswer = '부하율(Load Factor) = 평균부하 / 최대부하\n\n의미:\n• 1.0에 가까울수록 설비 이용 효율↑\n• 0.4 → 피크 집중 심함 → 설비 여유 많음\n\n개선 포인트:\n① 피크 시간대 수요 분산 (수요반응)\n② 축전지·ESS로 평탄화\n③ 야간 부하 창출 검토';
+  const [typed, setTyped] = useState('');
+  useEffect(() => {
+    let i = 0; let id;
+    const tick = () => { setTyped(fullAnswer.slice(0, i)); i += 2; if (i <= fullAnswer.length) id = setTimeout(tick, 28); };
+    tick();
+    return () => clearTimeout(id);
+  }, [s.korName]);
+
+  return (
+    <CardShell s={s}>
+      <div style={{ padding: 80, height: '100%', display: 'flex', flexDirection: 'column', fontFamily: s.bodyFont, color: s.ink }}>
+        <CaseHeader n="02" title="전력·에너지 전문 질문" s={s}/>
+
+        <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.03em', marginTop: 20, fontFamily: s.displayFont }}>
+          "<span style={{ color: s.accent }}>부하율</span>이 뭔지<br/>
+          초등학생한테 설명해줘"
+        </div>
+
+        <div style={{ marginTop: 32, background: s.surface, border: `2px solid ${s.line || '#E5EAF2'}`, borderRadius: 22, padding: 32, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: s.ai, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 20 }}>AI</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: s.ink2 }}>답변 생성 중...</div>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+              <Pulse c={s.accent} />
+              <Pulse c={s.accent} d=".2s"/>
+              <Pulse c={s.accent} d=".4s"/>
+            </div>
+          </div>
+          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: s.bodyFont, fontSize: 24, lineHeight: 1.55, color: s.ink, fontWeight: 500, flex: 1 }}>
+            {typed}<span style={{ opacity: typed.length < fullAnswer.length ? 1 : 0, background: s.accent, display: 'inline-block', width: 3, height: 26, verticalAlign: 'middle' }}/>
+          </pre>
+        </div>
+
+        <div style={{ marginTop: 24, fontSize: 26, color: s.ink2, fontWeight: 600, textAlign: 'center' }}>
+          💬 후배 교육, 민원 응대 스크립트에도 활용 👌
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+function Pulse({ c, d = '0s' }) {
+  return <span style={{ width: 8, height: 8, borderRadius: '50%', background: c, animation: `pulse 1.2s ${d} infinite` }}/>;
+}
+
+/* =====================================================================
+   CARD 7 — 사례 3: 망분리 환경에서 VBA 쓰는 법
+   ===================================================================== */
+function Card7Macro({ s }) {
+  return (
+    <CardShell s={s}>
+      <div style={{ padding: 72, height: '100%', display: 'flex', flexDirection: 'column', fontFamily: s.bodyFont, color: s.ink }}>
+        <CaseHeader n="03" title="망분리라서 안 된다고요?" s={s}/>
+
+        <div style={{ fontSize: 58, fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.03em', marginTop: 18, fontFamily: s.displayFont }}>
+          <span style={{ color: s.accent }}>복사 → 붙여넣기</span>,<br/>
+          그게 전부입니다.
+        </div>
+
+        <div style={{ marginTop: 28, fontSize: 24, color: s.ink2, fontWeight: 500, lineHeight: 1.5 }}>
+          💬 "월별 실적 시트 10개, 한 장으로 합치는 매크로 짜줘"
+        </div>
+
+        {/* Diagram: 사외망 → 사내망 */}
+        <div style={{ marginTop: 28, flex: 1, display: 'flex', alignItems: 'stretch', gap: 20 }}>
+          {/* 사외망 */}
+          <NetCol
+            s={s}
+            tag="사외망"
+            tagColor={s.sky}
+            title="AI에게 주문"
+            icon="💬"
+            step="STEP 1"
+            body={<>
+              <div style={{ fontSize: 22, color: s.ink2, lineHeight: 1.55 }}>Claude · ChatGPT 등</div>
+              <div style={{ marginTop: 12, padding: 14, background: s.ink, borderRadius: 10, color: '#9eeaff', fontFamily: 'ui-monospace, monospace', fontSize: 16, lineHeight: 1.45 }}>
+                Sub MergeSheets()<br/>
+                &nbsp;&nbsp;Dim ws As Worksheet<br/>
+                &nbsp;&nbsp;For Each ws In ...<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;ws.UsedRange.Copy<br/>
+                &nbsp;&nbsp;Next ws<br/>
+                End Sub
+              </div>
+              <div style={{ marginTop: 12, fontSize: 20, fontWeight: 700, color: s.accent }}>📋 코드 복사</div>
+            </>}
+          />
+
+          {/* Transfer arrow */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, flexShrink: 0 }}>
+            <div style={{ fontSize: 18, color: s.ink2, fontWeight: 700, writingMode: 'vertical-rl', textOrientation: 'mixed', letterSpacing: '0.08em' }}>사내 전송</div>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: s.yellow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, boxShadow: '0 6px 16px rgba(0,0,0,0.12)' }}>→</div>
+            <div style={{ fontSize: 18, color: s.ink2, fontWeight: 600, textAlign: 'center', lineHeight: 1.35 }}>메일 /<br/>자료반출</div>
+          </div>
+
+          {/* 사내망 */}
+          <NetCol
+            s={s}
+            tag="사내망"
+            tagColor={s.accent}
+            title="엑셀에 붙이기"
+            icon="📊"
+            step="STEP 2"
+            body={<>
+              <div style={{ fontSize: 22, color: s.ink2, lineHeight: 1.55 }}>업무용 PC 엑셀</div>
+              <div style={{ marginTop: 12, padding: 14, background: s.bubble, borderRadius: 10, fontSize: 20, lineHeight: 1.65, color: s.ink, fontWeight: 600 }}>
+                <b style={{color: s.accent}}>①</b> Alt + F11<br/>
+                <b style={{color: s.accent}}>②</b> 모듈에 붙여넣기<br/>
+                <b style={{color: s.accent}}>③</b> F5 실행
+              </div>
+              <div style={{ marginTop: 12, fontSize: 20, fontWeight: 700, color: s.accent }}>⚡ 3분 완료</div>
+            </>}
+          />
+        </div>
+
+        <div style={{ marginTop: 22, padding: '18px 22px', background: s.surface, borderRadius: 14, border: `2px solid ${s.yellow}`, display: 'flex', gap: 14, alignItems: 'center' }}>
+          <div style={{ fontSize: 28 }}>🔐</div>
+          <div style={{ fontSize: 20, color: s.ink2, fontWeight: 600, lineHeight: 1.5 }}>
+            <b style={{color: s.ink}}>코드엔 민감정보가 없음</b> → 반출 승인도 간단.<br/>
+            데이터는 사내에만 두고, <b style={{color: s.accent}}>"로직"</b>만 AI에게 맡기는 겁니다.
+          </div>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+function NetCol({ s, tag, tagColor, title, icon, step, body }) {
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: s.surface, borderRadius: 18, border: `2px solid ${s.line || '#E5EAF2'}`, overflow: 'hidden' }}>
+      <div style={{ padding: '12px 20px', background: tagColor, color: '#fff', fontSize: 20, fontWeight: 800, letterSpacing: '0.04em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>{tag}</span>
+        <span style={{ fontSize: 16, opacity: 0.85 }}>{step}</span>
+      </div>
+      <div style={{ padding: 20, display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <div style={{ fontSize: 28 }}>{icon}</div>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em' }}>{title}</div>
+        </div>
+        {body}
+      </div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   CARD 8 — 사례 4: 바이브 코딩 (나만의 업무 앱)
+   ===================================================================== */
+function Card8Vibe({ s }) {
+  return (
+    <CardShell s={s}>
+      <div style={{ padding: 72, height: '100%', display: 'flex', flexDirection: 'column', fontFamily: s.bodyFont, color: s.ink }}>
+        <CaseHeader n="04" title="나만의 업무 도구, 직접 만들기" s={s}/>
+
+        <div style={{ fontSize: 58, fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.03em', marginTop: 18, fontFamily: s.displayFont }}>
+          말로 <span style={{ color: s.accent }}>앱을 만들고</span><br/>
+          사내망에서 엽니다.
+        </div>
+
+        <div style={{ marginTop: 18, fontSize: 22, color: s.ink2, fontWeight: 500, lineHeight: 1.5 }}>
+          설치 X · 설치승인 X · <b style={{color: s.ink}}>HTML 파일 1개</b>로 작동.
+        </div>
+
+        <div style={{ marginTop: 22, padding: 22, background: s.bubble, borderRadius: 14, fontSize: 22, lineHeight: 1.55, fontWeight: 500 }}>
+          💬 "<b>일일 업무 체크리스트 앱</b> HTML로 만들어줘. 항목 추가·완료 체크·날짜별 저장·진행률 그래프"
+        </div>
+
+        <div style={{ marginTop: 20, background: '#fff', borderRadius: 16, border: `2px solid ${s.line || '#E5EAF2'}`, overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#F1F3F7', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${s.line || '#E5EAF2'}` }}>
+            <div style={{width:10,height:10,borderRadius:'50%',background:'#ff5f56'}}/>
+            <div style={{width:10,height:10,borderRadius:'50%',background:'#ffbd2e'}}/>
+            <div style={{width:10,height:10,borderRadius:'50%',background:'#27c93f'}}/>
+            <div style={{ marginLeft: 10, padding: '3px 12px', background: '#fff', borderRadius: 6, fontSize: 15, color: '#8a99b1', fontFamily: 'ui-monospace, monospace' }}>file:///C:/내PC/체크리스트.html</div>
+          </div>
+          <div style={{ padding: 22, flex: 1, color: '#0d1826' }}>
+            <div style={{ fontSize: 26, fontWeight: 800, marginBottom: 4, color: s.accent }}>✓ 내 일일 체크리스트</div>
+            <div style={{ fontSize: 15, color: '#8a99b1', marginBottom: 12 }}>2026년 4월 20일 · 진행률 75%</div>
+            <div style={{ height: 8, background: '#EEF1F6', borderRadius: 99, overflow: 'hidden', marginBottom: 14 }}>
+              <div style={{ width: '75%', height: '100%', background: s.accent }}/>
+            </div>
+            <TodoRow done text="TBM 작성 및 공유" s={s}/>
+            <TodoRow done text="설비 순시 점검 (3건)" s={s}/>
+            <TodoRow done text="공사 일지 업로드" s={s}/>
+            <TodoRow text="차주 재료 발주 요청" s={s}/>
+            <div style={{ marginTop: 8, padding: '8px 12px', border: `1.5px dashed ${s.line || '#E5EAF2'}`, borderRadius: 8, fontSize: 16, color: '#8a99b1' }}>+ 항목 추가</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 18, padding: '16px 20px', background: s.surface, borderRadius: 14, border: `2px solid ${s.accent}22`, display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ fontSize: 28 }}>📦</div>
+          <div style={{ fontSize: 20, color: s.ink2, fontWeight: 600, lineHeight: 1.5 }}>
+            <b style={{color: s.ink}}>HTML 파일 하나</b> → 자료반출 → 사내 PC에서 더블클릭.<br/>
+            <span style={{fontSize: 18}}>서버·DB 필요 없음. 단순한 개인 도구는 이게 정답.</span>
+          </div>
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+function TodoRow({ text, done, s }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: `1px solid ${s.line || '#E5EAF2'}` }}>
+      <div style={{ width: 22, height: 22, borderRadius: 6, border: done ? 'none' : `2px solid ${s.line || '#E5EAF2'}`, background: done ? s.accent : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 900 }}>{done ? '✓' : ''}</div>
+      <div style={{ fontSize: 18, color: done ? '#8a99b1' : '#0d1826', textDecoration: done ? 'line-through' : 'none', fontWeight: 500 }}>{text}</div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   CARD 9 — 퀴즈 (INTERACTIVE)
+   ===================================================================== */
+function Card8Quiz({ s }) {
+  const [pick, setPick] = useState(null);
+  const correct = 'A';
+  return (
+    <CardShell s={s}>
+      <div style={{ padding: 80, height: '100%', display: 'flex', flexDirection: 'column', fontFamily: s.bodyFont, color: s.ink }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ padding: '6px 18px', background: s.ink, color: '#fff', borderRadius: 999, fontWeight: 800, fontSize: 22, letterSpacing: '0.05em' }}>QUIZ</div>
+          <div style={{ fontSize: 30, color: s.ink2, fontWeight: 600 }}>둘 중 AI가 쓴 건?</div>
+        </div>
+
+        <div style={{ fontSize: 64, fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.03em', marginTop: 32, fontFamily: s.displayFont }}>
+          고객 민원 답변 초안,<br/>
+          <span style={{ color: s.accent }}>누가 썼을까요?</span>
+        </div>
+
+        <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 20, flex: 1 }}>
+          <QuizOption s={s} letter="A" pick={pick} setPick={setPick} correct={correct}
+            text={'"고객님, 불편을 드려 진심으로 죄송합니다. 말씀하신 정전 상황은 해당 지역 변압기 점검으로 인한 것으로 확인되며, 복구 예상 시각은 17:30입니다. 보상 절차에 대해서는 추가 안내 드리겠습니다."'}
+          />
+          <QuizOption s={s} letter="B" pick={pick} setPick={setPick} correct={correct}
+            text={'"확인 결과 해당 지역 정전은 예정된 변압기 점검 때문이었습니다. 17시 30분쯤 복구 예정이고, 보상 건은 저희 쪽에서 다시 연락드릴게요. 놀라셨을 텐데 죄송합니다."'}
+          />
+        </div>
+
+        {pick && (
+          <div style={{ marginTop: 24, padding: 24, background: s.accent + '14', borderRadius: 18, fontSize: 26, lineHeight: 1.5, fontWeight: 600, color: s.ink }}>
+            {pick === correct ? '정답! 🎉 ' : '땡! ❌ '}
+            <b>A가 AI 초안, B가 선배가 다듬은 최종본</b>입니다.<br/>
+            <span style={{ color: s.ink2, fontSize: 22, fontWeight: 500 }}>→ AI 초안 + 사람의 다듬기, 이 조합이 정답입니다.</span>
+          </div>
+        )}
+      </div>
+    </CardShell>
+  );
+}
+
+function QuizOption({ s, letter, text, pick, setPick, correct }) {
+  const picked = pick === letter;
+  const revealed = pick !== null;
+  const isCorrect = letter === correct;
+  const border = !revealed ? s.line || '#E5EAF2'
+    : picked && isCorrect ? '#2CBB5D'
+    : picked && !isCorrect ? '#C83333'
+    : isCorrect ? '#2CBB5D' : s.line || '#E5EAF2';
+  return (
+    <button onClick={() => setPick(letter)} style={{
+      display: 'flex', gap: 20, alignItems: 'flex-start', textAlign: 'left',
+      padding: 28, background: s.surface, border: `3px solid ${border}`, borderRadius: 20,
+      cursor: pick ? 'default' : 'pointer', fontFamily: 'inherit', flex: 1,
+      transform: picked ? 'scale(1.02)' : 'none', transition: 'all 0.2s',
+    }}>
+      <div style={{ flexShrink: 0, width: 56, height: 56, borderRadius: 14, background: picked ? s.accent : s.bubble, color: picked ? '#fff' : s.ink, fontWeight: 900, fontSize: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: s.displayFont }}>{letter}</div>
+      <div style={{ fontSize: 24, lineHeight: 1.55, color: s.ink, fontWeight: 500 }}>{text}</div>
+    </button>
+  );
+}
+
+/* =====================================================================
+   CARD 9 — 직무별 AI 활용 추천 (INTERACTIVE)
+   ===================================================================== */
+const ROLE_RECS = {
+  '송전': [
+    { icon: '📋', t: 'TBM·작업계획서 초안', d: '작업 조건 3줄 말하면 체크리스트+위험요인 자동' },
+    { icon: '⚡', t: '고장·파급 사례 정리', d: '긴 운영일지 → 원인·조치 핵심 3줄 요약' },
+    { icon: '📄', t: '영문 매뉴얼 번역', d: 'GIS·변압기 영문 매뉴얼, 전문용어 유지하며 한글로' },
+  ],
+  '변전': [
+    { icon: '🔧', t: '점검·시험 절차서 작성', d: '절차 순서만 주면 표준 양식으로 정리' },
+    { icon: '📊', t: '보호계전 설정값 해설', d: '후배 교육용 쉬운 말로 풀어쓰기' },
+    { icon: '🗂️', t: '이상 로그·알람 해석', d: '로그 붙여넣으면 원인 후보 + 확인 포인트 제안' },
+  ],
+  '배전': [
+    { icon: '💬', t: '민원 답변·응대 스크립트', d: '정전·전압 관련 문의, 공손+명확하게 30초' },
+    { icon: '🏘️', t: '정전 안내문 작성', d: '구간·시간·사유만 주면 공지문 자동 작성' },
+    { icon: '🛠️', t: '현장 작업 보고서 초안', d: '작업 결과 키워드 → 완결된 보고서 문장으로' },
+  ],
+  '기획·경영': [
+    { icon: '📊', t: '보고서·기획안 초안', d: '핵심 3가지만 알려주면 목차 + 초안 뚝딱' },
+    { icon: '🔍', t: '정책·업계 동향 브리핑', d: '긴 기사/법안 요약 → 핵심만 5줄' },
+    { icon: '💡', t: '아이디어 브레인스토밍', d: '혼자 막힐 때 10개 옵션 받아보기' },
+  ],
+  '재무·총무': [
+    { icon: '📐', t: '복잡한 엑셀 수식', d: 'VLOOKUP·INDEX MATCH·피벗 자동 생성' },
+    { icon: '🧮', t: 'VBA 매크로 작성', d: '반복 업무 자동화 코드 한국어로 주문' },
+    { icon: '✉️', t: '공지·안내 이메일', d: '정중+간결 톤으로 초안 1분' },
+  ],
+};
+
+function Card9Roles({ s }) {
+  const roles = Object.keys(ROLE_RECS);
+  const [role, setRole] = useState(roles[0]);
+  return (
+    <CardShell s={s}>
+      <div style={{ padding: 80, height: '100%', display: 'flex', flexDirection: 'column', fontFamily: s.bodyFont, color: s.ink }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ padding: '6px 18px', background: s.accent, color: '#fff', borderRadius: 999, fontWeight: 800, fontSize: 22, letterSpacing: '0.05em' }}>FOR YOU</div>
+          <div style={{ fontSize: 30, color: s.ink2, fontWeight: 600 }}>내 직무 선택 👇</div>
+        </div>
+
+        <div style={{ fontSize: 58, fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.03em', marginTop: 24, fontFamily: s.displayFont }}>
+          당신 업무엔<br/>
+          <span style={{ color: s.accent }}>이렇게</span> 써보세요.
+        </div>
+
+        {/* Role tabs */}
+        <div style={{ marginTop: 36, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {roles.map(r => (
+            <button key={r} onClick={() => setRole(r)} style={{
+              padding: '14px 22px', borderRadius: 999,
+              border: `2px solid ${role === r ? s.accent : s.line || '#E5EAF2'}`,
+              background: role === r ? s.accent : s.surface,
+              color: role === r ? '#fff' : s.ink,
+              fontWeight: 700, fontSize: 22, cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'all .15s',
+            }}>{r}</button>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 36, flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {ROLE_RECS[role].map((item, i) => (
+            <div key={i} style={{ display: 'flex', gap: 24, alignItems: 'center', padding: 28, background: s.surface, borderRadius: 20, border: `2px solid ${s.line || '#E5EAF2'}` }}>
+              <div style={{ fontSize: 54 }}>{item.icon}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 4 }}>{item.t}</div>
+                <div style={{ fontSize: 22, color: s.ink2, fontWeight: 500 }}>{item.d}</div>
+              </div>
+              <div style={{ fontSize: 30, color: s.line || '#E5EAF2' }}>→</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+/* =====================================================================
+   CARD 10 — CTA: 도구 비교 + 지금 바로 써보기
+   ===================================================================== */
+function Card10CTA({ s }) {
+  return (
+    <CardShell s={s} tone="dark" bg={s.coverBg}>
+      <div style={{ padding: 80, height: '100%', display: 'flex', flexDirection: 'column', color: s.coverInk, fontFamily: s.bodyFont }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Dot color={s.yellow} size={14}/>
+          <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '0.1em', opacity: 0.9 }}>지금 바로 · 30초 시작</div>
+        </div>
+
+        <div style={{ fontSize: 90, fontWeight: 900, lineHeight: 1.02, letterSpacing: '-0.04em', marginTop: 20, fontFamily: s.displayFont }}>
+          가입하고,<br/>
+          <span style={{ color: s.yellow }}>말만 걸어보세요.</span>
+        </div>
+
+        <div style={{ marginTop: 40, fontSize: 26, opacity: 0.82, fontWeight: 500 }}>대표 AI 도구 3가지, 전부 무료로 시작 가능:</div>
+
+        <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <ToolRow s={s} logo="C" color="#D97757" name="Claude" url="claude.ai" desc="길고 복잡한 문서 요약·작성에 강함"/>
+          <ToolRow s={s} logo="G" color="#10A37F" name="ChatGPT" url="chatgpt.com" desc="범용성·대중성 No.1, 이미지도 가능"/>
+          <ToolRow s={s} logo="G" color="#4285F4" name="Gemini" url="gemini.google.com" desc="구글 앱·Gmail과 자연 연동"/>
+        </div>
+
+        <div style={{ marginTop: 'auto', padding: 28, background: 'rgba(255,255,255,0.1)', borderRadius: 20, backdropFilter: 'blur(10px)' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, opacity: 0.9, marginBottom: 8 }}>✅ 시작 전 체크리스트</div>
+          <div style={{ fontSize: 22, opacity: 0.88, lineHeight: 1.7 }}>
+            ① 설정 → 학습 기여 <b style={{color: s.yellow}}>OFF</b>&nbsp;&nbsp;② 대화 기억 <b style={{color: s.yellow}}>OFF</b><br/>
+            ③ 민감정보는 마스킹 &nbsp;&nbsp;④ 질문은 구체적으로
+          </div>
+        </div>
+
+        <div style={{ marginTop: 24, textAlign: 'center', fontSize: 22, opacity: 0.6 }}>
+          한국전력공사 · AI 활용 가이드 10/10 · 동료에게 공유 🔄
+        </div>
+      </div>
+    </CardShell>
+  );
+}
+
+function ToolRow({ s, logo, color, name, url, desc }) {
+  return (
+    <div style={{ display: 'flex', gap: 20, alignItems: 'center', padding: '20px 24px', background: 'rgba(255,255,255,0.12)', borderRadius: 18 }}>
+      <div style={{ width: 64, height: 64, borderRadius: 16, background: color, color: '#fff', fontWeight: 900, fontSize: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: s.displayFont }}>{logo}</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.02em' }}>{name}</div>
+        <div style={{ fontSize: 20, opacity: 0.75 }}>{desc}</div>
+      </div>
+      <div style={{ padding: '10px 18px', background: 'rgba(255,255,255,0.2)', borderRadius: 10, fontSize: 20, fontWeight: 700, fontFamily: 'ui-monospace, monospace' }}>{url}</div>
+    </div>
+  );
+}
+
+/* =====================================================================
+   ROOT APP
+   ===================================================================== */
+const CARDS = [
+  { n: '01 · 표지', C: Card1Cover },
+  { n: '02 · 오해 보안', C: Card2Security },
+  { n: '03 · 사무+기술 모두', C: Card3Scope },
+  { n: '04 · 오해 전문가', C: Card4Expert },
+  { n: '05 · 엑셀 (Before/After)', C: Card5Excel, interactive: true },
+  { n: '06 · 전력 전문 질문', C: Card6Power, interactive: true },
+  { n: '07 · VBA 망분리', C: Card7Macro },
+  { n: '08 · 바이브 코딩', C: Card8Vibe },
+  { n: '09 · 퀴즈', C: Card8Quiz, interactive: true },
+  { n: '10 · 직무별 추천', C: Card9Roles, interactive: true },
+  { n: '11 · CTA', C: Card10CTA },
+];
+
+function App() {
+  const [styleKey, setStyleKey] = useState(TWEAKS.style);
+  const [viewMode, setViewMode] = useState(() => {
+    try { return localStorage.getItem('kepco-view-mode') || 'viewer'; } catch(e) { return 'viewer'; }
+  });
+  const [curIdx, setCurIdx] = useState(() => {
+    try { return parseInt(localStorage.getItem('kepco-cur-idx') || '0', 10) || 0; } catch(e) { return 0; }
+  });
+  const s = STYLES[styleKey];
+
+  // Tweaks protocol
+  useEffect(() => {
+    const onMsg = (e) => {
+      const d = e.data || {};
+      if (d.type === '__activate_edit_mode') setEditMode(true);
+      if (d.type === '__deactivate_edit_mode') setEditMode(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+  const [editMode, setEditMode] = useState(false);
+
+  const setStyle = (k) => {
+    setStyleKey(k);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { style: k } }, '*');
+  };
+
+  const goto = (i) => {
+    const n = Math.max(0, Math.min(CARDS.length - 1, i));
+    setCurIdx(n);
+    try { localStorage.setItem('kepco-cur-idx', String(n)); } catch(e) {}
+  };
+
+  const setView = (v) => {
+    setViewMode(v);
+    try { localStorage.setItem('kepco-view-mode', v); } catch(e) {}
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
+
+  // Keyboard nav in viewer mode
+  useEffect(() => {
+    if (viewMode !== 'viewer') return;
+    const onKey = (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goto(curIdx + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); goto(curIdx - 1); }
+      if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [viewMode, curIdx]);
+
+  // Page background tracks style for MZ dark
+  useEffect(() => {
+    document.body.style.background = styleKey === 'mz' ? '#05061A' : '#EEF1F6';
+    document.querySelectorAll('.page-head h1, .page-head p').forEach(el => {
+      el.style.color = styleKey === 'mz' ? '#F2F4FF' : '';
+    });
+  }, [styleKey]);
+
+  const isMz = styleKey === 'mz';
+
+  if (viewMode === 'viewer') {
+    const card = CARDS[curIdx];
+    const C = card.C;
+    return (
+      <>
+        <div className="viewer-head">
+          <div className="style-picker" style={{ background: isMz ? '#14162A' : '#fff', border: isMz ? '1px solid #2A2E4D' : '1px solid var(--line)' }}>
+            {Object.entries(STYLES).map(([k, v]) => (
+              <button key={k} className={k === styleKey ? 'active' : ''} onClick={() => setStyle(k)}
+                style={{ background: k === styleKey ? (isMz ? v.accent : '#0d1826') : 'transparent', color: k === styleKey ? '#fff' : (isMz ? '#A6AEC8' : '#6b7a90') }}>
+                {v.korName}
+              </button>
+            ))}
+          </div>
+          <div className="view-mode-toggle" style={{ background: isMz ? '#14162A' : '#fff', border: isMz ? '1px solid #2A2E4D' : '1px solid var(--line)' }}>
+            <button className="active" style={{ background: isMz ? s.accent : '#0d1826', color: '#fff' }}>한 장씩</button>
+            <button onClick={() => setView('grid')} style={{ color: isMz ? '#A6AEC8' : '#6b7a90' }}>전체 보기</button>
+          </div>
+          <button onClick={toggleFullscreen} title="전체화면 (F)" style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: isMz ? '#14162A' : '#fff', color: isMz ? '#F2F4FF' : '#0d1826', cursor: 'pointer', fontSize: 18, boxShadow: '0 2px 10px rgba(10,30,70,0.08)', border: isMz ? '1px solid #2A2E4D' : '1px solid var(--line)' }}>⛶</button>
+        </div>
+
+        <div className="counter" style={{ background: isMz ? 'rgba(20,22,42,0.9)' : 'rgba(255,255,255,0.9)', color: isMz ? '#F2F4FF' : '#0d1826' }}>
+          {curIdx + 1} / {CARDS.length}
+        </div>
+
+        <button className="nav-btn prev" onClick={() => goto(curIdx - 1)} disabled={curIdx === 0}
+          style={{ background: isMz ? '#14162A' : '#fff', color: isMz ? '#F2F4FF' : '#0d1826' }} aria-label="이전">‹</button>
+        <button className="nav-btn next" onClick={() => goto(curIdx + 1)} disabled={curIdx === CARDS.length - 1}
+          style={{ background: isMz ? '#14162A' : '#fff', color: isMz ? '#F2F4FF' : '#0d1826' }} aria-label="다음">›</button>
+
+        <div className="viewer" data-screen-label={card.n}>
+          <div className="viewer-card-wrap">
+            <div className="viewer-meta" style={{ color: isMz ? '#6b7a90' : '#8a99b1' }}>
+              {card.n.toUpperCase()} {card.interactive && '· 👆 INTERACTIVE'}
+            </div>
+            <C s={s} />
+          </div>
+        </div>
+
+        <div className="dots" style={{ background: isMz ? 'rgba(20,22,42,0.85)' : 'rgba(255,255,255,0.85)' }}>
+          {CARDS.map((_, i) => (
+            <button key={i} className={`dot ${i === curIdx ? 'active' : ''}`}
+              style={{ background: i === curIdx ? (isMz ? s.accent : '#0d1826') : (isMz ? '#2A2E4D' : '#CBD3E0') }}
+              onClick={() => goto(i)} aria-label={`${i + 1}번 카드로 이동`}/>
+          ))}
+        </div>
+
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+          }
+        `}</style>
+      </>
+    );
+  }
+
+  // Grid mode
+  return (
+    <>
+      <div className="page-head">
+        <div>
+          <h1>한전 AI 카드뉴스 · {CARDS.length}장</h1>
+          <p>전체 보기 모드입니다. 한 장씩 넘기려면 오른쪽 버튼을 눌러주세요.</p>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="style-picker" style={{ background: isMz ? '#14162A' : '#fff', border: isMz ? '1px solid #2A2E4D' : '1px solid var(--line)' }}>
+            {Object.entries(STYLES).map(([k, v]) => (
+              <button key={k} className={k === styleKey ? 'active' : ''} onClick={() => setStyle(k)}
+                style={{ background: k === styleKey ? (isMz ? v.accent : '#0d1826') : 'transparent', color: k === styleKey ? '#fff' : (isMz ? '#A6AEC8' : '#6b7a90') }}>
+                {v.korName}
+              </button>
+            ))}
+          </div>
+          <div className="view-mode-toggle" style={{ background: isMz ? '#14162A' : '#fff', border: isMz ? '1px solid #2A2E4D' : '1px solid var(--line)' }}>
+            <button onClick={() => setView('viewer')} style={{ color: isMz ? '#A6AEC8' : '#6b7a90' }}>한 장씩</button>
+            <button className="active" style={{ background: isMz ? s.accent : '#0d1826', color: '#fff' }}>전체 보기</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid">
+        {CARDS.map((card, i) => {
+          const C = card.C;
+          return (
+            <div key={i} className="card-wrap" data-screen-label={card.n}>
+              <div className="card-num" style={{ color: isMz ? '#6b7a90' : '#8a99b1' }}>
+                {card.n.toUpperCase()} {card.interactive && '· 👆 INTERACTIVE'}
+              </div>
+              <C s={s} />
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.2); }
+        }
+      `}</style>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+{
+  "title": "AI 뉴스 브리핑",
+  "date": "2026.04.20",
+  "cards": [
+    {
+      "type": "cover",
+      "title": "AI 뉴스 브리핑",
+      "subtitle": "2026년 4월 20일 (월)",
+      "accent_text": "오늘의 AI 트렌드를 한눈에"
+    },
+    {
+      "type": "news",
+      "number": 1,
+      "title": "그록 4.3 조용히 출시",
+      "body": "xAI가 그록 4.3 베타를 공개했다. 5000억 매개변수 규모로 아키텍처와 영상 이해 능력을 강화했고, 긴 문맥 처리도 개선됐다.",
+      "tags": ["xAI", "Grok", "모델릴리즈"],
+      "source_url": "https://www.aitimes.com/news/articleView.html?idxno=209481"
+    },
+    {
+      "type": "news",
+      "number": 2,
+      "title": "구글 에이전틱AI 국내 확산",
+      "body": "카카오뱅크·CJ ENM·메가존소프트 등이 구글 제미나이 엔터프라이즈를 도입했다. 카뱅은 임직원 1,800여명이 활용 중이다.",
+      "tags": ["Google", "에이전틱AI", "국내도입"],
+      "source_url": "https://www.aitimes.com/news/articleView.html?idxno=209475"
+    },
+    {
+      "type": "news",
+      "number": 3,
+      "title": "한컴, AI로 매출 2000억",
+      "body": "한컴이 창사 첫 매출 2000억 목표를 제시했다. AI 매출 비중을 50%까지 끌어올려 SaaS 기반으로 체질 개선한다는 계획이다.",
+      "tags": ["한컴", "AI전환", "국내기업"],
+      "source_url": "https://www.aitimes.com/news/articleView.html?idxno=209482"
+    },
+    {
+      "type": "news",
+      "number": 4,
+      "title": "뉴엔AI, 산업부 R&D 선정",
+      "body": "뉴엔AI가 자체 LLM 기반 위해징후 사전탐지 기술로 산업통상부 제품안전 R&D 연구기관에 선정됐다. 5~12월 진행된다.",
+      "tags": ["공공R&D", "LLM", "산업안전"],
+      "source_url": "https://www.aitimes.com/news/articleView.html?idxno=209480"
+    },
+    {
+      "type": "news",
+      "number": 5,
+      "title": "씨이랩, NVIDIA '엘리트'",
+      "body": "피지컬 AI 기업 씨이랩이 엔비디아 파트너 네트워크의 엔터프라이즈 SW 부문 최고 등급 엘리트로 승격했다. 국내 유일이다.",
+      "tags": ["NVIDIA", "피지컬AI", "씨이랩"],
+      "source_url": "https://www.aitimes.com/news/articleView.html?idxno=209483"
+    },
+    {
+      "type": "news",
+      "number": 6,
+      "title": "인핸스, 네이버벤처스 투자",
+      "body": "산업 특화 AI OS 기업 인핸스가 네이버벤처스로부터 전략적 투자를 유치했다. 삼성 등 50개국 30여 기업에 이미 도입된 플랫폼이다.",
+      "tags": ["인핸스", "AI-OS", "투자유치"],
+      "source_url": "https://www.aitimes.com/news/articleView.html?idxno=209472"
+    },
+    {
+      "type": "news",
+      "number": 7,
+      "title": "국방, AI 중심으로 재편",
+      "body": "반도체·AI·로봇·신소재 4대 기술이 국방의 축으로 이동 중이다. 최근 5년 시장 추이에서 국방 AI의 성장이 가장 두드러진다는 분석이다.",
+      "tags": ["국방AI", "기술동향", "칼럼"],
+      "source_url": "https://www.aitimes.com/news/articleView.html?idxno=209465"
+    },
+    {
+      "type": "closing",
+      "title": "내일도 찾아뵙겠습니다",
+      "body": "매일 아침 AI 주요 소식을 간추려 전해드립니다.",
+      "source": "출처: AI타임스 (aitimes.com) · 선별: daily-card-news 파이프라인"
+    }
+  ]
+}
