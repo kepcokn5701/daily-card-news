@@ -405,11 +405,19 @@ def collect_rss(target: dt.date, limit: int, *, verify: bool = True) -> list[dic
     return filter_by_date(items, target)[:limit]
 
 
-def collect_popular(limit: int = 10, *, verify: bool = True) -> list[dict]:
+def collect_popular(
+    limit: int = 10,
+    *,
+    verify: bool = True,
+    debug_save_path: Path | None = None,
+) -> list[dict]:
     print(f"[popular] 홈페이지 파싱: {HOME_URL}")
     html = fetch(HOME_URL, verify=verify)
     if not html:
         return []
+    if debug_save_path is not None:
+        debug_save_path.write_text(html, encoding="utf-8")
+        print(f"[popular] debug HTML 저장: {debug_save_path}")
     return parse_popular(html, limit)
 
 
@@ -419,12 +427,13 @@ def collect(
     sources: set[str],
     *,
     verify: bool = True,
+    debug_save_html: Path | None = None,
 ) -> list[dict]:
     parts: list[list[dict]] = []
     if "rss" in sources:
         parts.append(collect_rss(target, limit, verify=verify))
     if "popular" in sources:
-        parts.append(collect_popular(limit=10, verify=verify))
+        parts.append(collect_popular(limit=10, verify=verify, debug_save_path=debug_save_html))
     if "energy" in sources:
         parts.append(fetch_energy(target, verify=verify))
     return merge_items(*parts)
@@ -449,6 +458,11 @@ def main(argv: Iterable[str] | None = None) -> int:
         "--insecure",
         action="store_true",
         help="SSL 검증 끄기 (사내 MITM 프록시 긴급 모드)",
+    )
+    ap.add_argument(
+        "--debug-save-html",
+        action="store_true",
+        help="홈페이지 HTML을 _debug_home.html 로 저장 (popular selector 튜닝용)",
     )
     args = ap.parse_args(argv)
 
@@ -481,7 +495,14 @@ def main(argv: Iterable[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{target.isoformat()}-raw.json"
 
-    items = collect(target, args.limit, sources, verify=(not args.insecure))
+    debug_html_path = (out_dir / "_debug_home.html") if args.debug_save_html else None
+    items = collect(
+        target,
+        args.limit,
+        sources,
+        verify=(not args.insecure),
+        debug_save_html=debug_html_path,
+    )
     if not items:
         print("[err] 수집 결과 0건.", file=sys.stderr)
         if _TRUSTSTORE_STATUS == "not-installed" and not args.insecure:

@@ -15,11 +15,15 @@
 | C1 | 로컬에서 `collect_aitimes.py` v1 실행 | 사용자 PC | ✅ |
 | C2 v1 | RSS 최신순 기반 선별 (baseline, v1 파일로 보존) | Cowork | ✅ |
 | **D0-5** | **소스 피벗: RSS 최신순 → Most Popular + 에너지 섹션. 스크립트 v2 확장** | **Cowork** | ✅ |
-| **C1'** | **확장된 스크립트 재실행 → 새 raw.json** | **사용자 PC** | ⏳ 대기 |
+| C1' 시도 #1 | 스크립트 v2 재실행 | 사용자 PC | ⚠️ 부분 성공 (Popular 매칭 실패) |
+| D0-6 | `--debug-save-html` 플래그 추가 | Cowork | ✅ |
+| **C1' 시도 #2** | **`--debug-save-html` 로 홈페이지 HTML 수집** | **사용자 PC** | ⏳ 대기 |
+| D0-7 | Cowork가 HTML 분석 후 selector 고정 → 스크립트 v2.1 | Cowork | 대기 |
+| C1' 시도 #3 | 고정된 selector 로 정상 수집 | 사용자 PC | 대기 |
 | C2 v2 | 새 raw.json 기반 선별·요약 (popular+energy 가중치) | Cowork | 대기 |
 | C3 | `generate_cards.py` 로 HTML 생성 | Cowork | 대기 |
 | C4 | HTML → PNG → 공유 | 사용자 수동 | 대기 |
-| C5 | `scripts/regen_today.bat` 원클릭 재생성 | Cowork | 대기 |
+| C5 | `scripts/regen_today.bat` 원클릭 재생성 | Cowork | ✅ |
 | C6 | Windows 작업 스케줄러 등록 (L2 자동화) | 사용자 + Cowork | 대기 |
 
 **진행 원칙**: 한 번에 한 단위만. 끝날 때마다 이 파일 갱신 + 사용자에게 보고 → 다음 단위 확인.
@@ -209,8 +213,92 @@ python scripts\collect_aitimes.py
 
 ---
 
+### C1' 시도 #1 결과 (2026-04-20) — ⚠️ 부분 성공
+
+| 소스 | 결과 | 문제점 |
+|---|---|---|
+| RSS | ✅ 50건 → 당일 13건 | 정상 |
+| Popular | ❌ 매칭 0건 | selector 12종 모두 미스. 구조 실측 필요 |
+| Energy | ⚠️ 키워드 폴백 · 당일 2건 | S1N8~20 중 S1N13만 응답(에너지 아님), 나머지 404. 섹션번호 체계 비연속 |
+
+**진단 근거**
+- `{'energy': 2}` 태그 분포 → popular 태그 0건으로 피벗 핵심 미달
+- 키워드 폴백 5건 중 3건이 당일 아님(날짜 필터 제거)
+- S1N13 응답 사실은 AI타임스가 **섹션 번호를 연속적으로 쓰지 않음**을 시사 — 실제 에너지 메뉴 URL 확인 필요
+
+### D0-6 · 디버그 플래그 추가 (2026-04-20)
+
+**무엇**
+- `collect_aitimes.py` 에 `--debug-save-html` 플래그 추가
+- 플래그 지정 시 홈페이지 HTML 을 `결과물/scraps/_debug_home.html` 로 저장
+
+**왜**
+- Cowork 는 aitimes.com 을 직접 못 감 (egress block)
+- 하지만 사용자 PC가 저장해 준 HTML 파일은 mount 폴더에 들어오면 Cowork 가 읽을 수 있음
+- HTML 실물을 보면 Most Popular 위젯의 정확한 class/id 를 뽑아내어 `POPULAR_SELECTORS` 에 박을 수 있음
+
+**다음** → C1' 시도 #2 (디버그 모드 실행)
+
+---
+
+## 🔜 C1' 시도 #2 · 디버그 HTML 수집 (사용자 1회 실행)
+
+```cmd
+cd C:\Users\Admin\Desktop\project\daily-card-news
+python scripts\collect_aitimes.py --debug-save-html
+```
+
+**기대 결과**
+- `결과물\scraps\_debug_home.html` 파일 생성 (홈페이지 전체 HTML, 수백 KB)
+- raw.json 은 동일하게 생성됨 (디버그 모드라도 평상 동작)
+
+**사용자가 알릴 것**
+- `_debug_home.html` 파일 생겼다는 사실만 알려주면 됨
+  - → Cowork 가 파일 읽어서 Most Popular 위젯 분석
+  - → 실제 class/id 확인하여 `POPULAR_SELECTORS` 에 추가
+  - → 스크립트 v2.1 배포 → C1' 시도 #3 는 selector 매칭 성공 예상
+- 추가로 AI타임스 홈페이지 메뉴에서 "에너지" 또는 유사 카테고리가 **있는지** 눈으로 확인 후 알려주면 에너지 섹션도 개선 가능 (없으면 키워드 폴백 유지)
+
+---
+
 ## 📒 변경 이력
 
 - **2026-04-20 v0.1** · BUILD_LOG.md 최초 작성. D0 완료, C1 대기.
 - **2026-04-20 v0.2** · C1 시도 #1 실패 기록 (SSL MITM). D0-4 (`truststore` + `--insecure`).
 - **2026-04-20 v0.3** · C1 성공 · C2 v1 완료 (baseline) · **D0-5 소스 피벗** (RSS → Most Popular + 에너지) · 스크립트 v2 배포 · C1' 대기.
+- **2026-04-20 v0.4** · C1' 시도 #1 부분 성공 기록 (RSS OK, Popular 0건, Energy 2건) · **D0-6 `--debug-save-html` 플래그 추가** · C1' 시도 #2 지침.
+- **2026-04-20 v0.5** · C1' 시도 #2 성공 (debug HTML 확보) · **긴급모드 단축**: 사용자 재실행 없이 Cowork 가 HTML 직접 파싱해 Popular 10건 추출 → C2 v2 + C3 한 턴 처리. 오늘치 `2026-04-20.html` (9장 카드) 생성 완료. 스크립트 selector 고정은 내일(D0-7).
+- **2026-04-20 v0.6** · **C5 `regen_today.bat` 작성 완료** (퇴근 직전 추가). 더블클릭 → 오늘/지정일 카드뉴스 HTML 재생성 + 브라우저 자동 오픈. 내일 이후 휘발성 파일 복구는 이 파일 하나로 충분.
+
+## ✅ C2 v2 + C3 완료 (2026-04-20 긴급모드)
+
+**C2 v2** — Popular 10건 + Energy 후보 → 7건 선별
+- 앤트로픽 관련 5건 중 2건만 선택 (편향 축소)
+- 루머·칼럼성 제외
+- 에너지 1건 포함
+
+**C3** — `generate_cards.py` 실행 성공
+- 출력: `결과물/cardnews/2026-04-20.html` (9장 · 23KB)
+- 터미널: "총 9장의 카드가 생성되었습니다"
+
+**파일 매트릭스 (최종)**
+
+| 파일 | 종류 | 영속성 |
+|---|---|---|
+| `결과물/scraps/2026-04-20-raw.json` | 수집 원본 | ✅ 영속 |
+| `결과물/scraps/2026-04-20-v1.json/.md` | v1 baseline | ✅ 영속 |
+| `결과물/scraps/2026-04-20.json` | 카드용 소스 | ✅ 영속 |
+| `결과물/scraps/2026-04-20.md` | 사람용 요약 | ✅ 영속 |
+| `결과물/scraps/_debug_home.html` | 디버그 스냅샷 | ⚠️ 휘발성 (.html) |
+| `결과물/cardnews/2026-04-20.html` | **카드뉴스 결과물** | ⚠️ 휘발성 (.html) |
+
+**C4 (사용자 수동)**
+1. HTML 브라우저로 열기
+2. 내장 "PNG로 저장" 버튼으로 카드별 다운로드
+3. 카톡/메일 첨부
+
+**내일 이어갈 것 (D0-7 ~ C5, C6)**
+- 스크립트 v2.1: HTML 실측 기반 selector 고정 (`article.box-skin.idx--bg` 등)
+- 에너지 섹션 URL 확인
+- `regen_today.bat` 작성 (C5)
+- Windows 작업 스케줄러 등록 (C6)
